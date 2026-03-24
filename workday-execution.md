@@ -6,6 +6,65 @@ Each ticket produces one pull request. You control how many cards run in paralle
 
 ## Before You Start
 
+### Jira CLI Setup
+
+If you're on a new machine or setting up a new project, complete these steps before running the workday execution prompt.
+
+**Step 1 — Install jira CLI**
+
+```bash
+brew tap ankitpokhrel/jira-cli
+brew install jira-cli
+```
+
+**Step 2 — Get an API token**
+
+Go to https://id.atlassian.com/manage-profile/security/api-tokens and create a new token. Keep it handy for the next step.
+
+**Step 3 — Store the token in macOS Keychain**
+
+Run this in a **separate terminal window** (not the one running Claude, to avoid sharing credentials):
+
+```bash
+security add-generic-password -s jira-cli -a YOUR_EMAIL@example.com -w YOUR_TOKEN
+```
+
+Replace `YOUR_EMAIL@example.com` and `YOUR_TOKEN` with your values. The service name `jira-cli` and account (email) are what jira-cli looks for natively.
+
+**Step 4 — Run `jira init`**
+
+```bash
+jira init
+```
+
+Follow the prompts: choose Cloud vs. On-Premise, enter your Jira base URL, and specify the project key. This generates `~/.config/.jira/.config.yml`.
+
+**Step 5 — Install direnv and set up `.envrc`**
+
+direnv ensures the correct Jira config is loaded whenever you enter the project directory.
+
+```bash
+# Install direnv if not already installed
+brew install direnv
+
+# Add the shell hook to ~/.zshrc (if not already present)
+eval "$(direnv hook zsh)"
+```
+
+Create `.envrc` in the project root:
+
+```bash
+export JIRA_CONFIG_FILE=/path/to/project/.jira.yml
+```
+
+Then allow it:
+
+```bash
+direnv allow
+```
+
+---
+
 ### Setup: Eliminate Permission Prompts
 
 By default, Claude Code asks for permission every time it runs a `jira` CLI command. Add it to your allowed tools once and the prompts go away. Add the following to your project's `.claude/settings.json` (or `~/.claude/settings.json` to apply across all projects):
@@ -141,6 +200,60 @@ If there are no upfront questions, Claude proceeds immediately.
 Run this prompt once to start the workday.
 
 ```
+Before doing anything else, run the following setup checks:
+
+1. Run `which jira`. If jira is not installed, tell the developer and offer to
+   install it:
+   ```
+   brew tap ankitpokhrel/jira-cli
+   brew install jira-cli
+   ```
+   Wait for the developer to confirm installation before proceeding.
+
+2. Check whether JIRA_CONFIG_FILE is set in the environment. If it is not set,
+   the project is not configured for Jira CLI. Walk the developer through setup
+   in order:
+
+   a. If jira was just installed or is now available: ask for the developer's
+      Atlassian email — you'll substitute it into all commands below.
+
+   b. Direct the developer to https://id.atlassian.com/manage-profile/security/api-tokens
+      to create an API token. Tell them to come back once they have it.
+
+   c. Tell the developer to run the following command in a **separate terminal
+      window** (not this one, to avoid sharing credentials with Claude), replacing
+      the placeholders with their actual values:
+      ```
+      security add-generic-password -s jira-cli -a DEVELOPER_EMAIL -w THEIR_TOKEN
+      ```
+      Wait for the developer to confirm this is done.
+
+   d. Tell the developer to run `jira init` and walk through the prompts
+      (Cloud vs. On-Premise, base URL, project key). Wait for confirmation.
+
+   e. Check whether direnv is installed with `which direnv`. If not, offer to
+      install it:
+      ```
+      brew install direnv
+      ```
+      Then ask the developer to add the following to ~/.zshrc (or ~/.bashrc) if
+      not already present:
+      ```
+      eval "$(direnv hook zsh)"
+      ```
+      Then create `.envrc` in the project root:
+      ```
+      export JIRA_CONFIG_FILE=/path/to/project/.jira.yml
+      ```
+      Then run `direnv allow` in the project directory. Wait for confirmation.
+
+   Once all setup steps are confirmed complete, proceed.
+
+If both checks pass (jira is installed and JIRA_CONFIG_FILE is set), skip
+setup entirely and proceed directly to the merged PR review.
+
+---
+
 First, run the merged PR review: query my in-progress Jira cards assigned to
 me, then use the GitHub CLI to find pull requests whose source branch contains
 each ticket ID. For each card with a merged PR, ask me if the card is complete.
@@ -179,6 +292,8 @@ that branch name already exists, try a different camel case name. If no
 distinct name can be found, append an incrementing counter (e.g.
 `claude/PROJ-123/fixLoginTimeout2`).
 
+After creating the worktree, print: "Working directory: [full path to worktree]"
+
 While that card is executing, ask: "Would you like to prepare another card
 for me to work on in parallel?" If yes, follow the card selection flow and
 pre-flight the next card. Start it as soon as pre-flight answers arrive.
@@ -190,6 +305,8 @@ For each card in execution:
 - If you hit uncertainty that a quick question would resolve better than your
   best guess, ask — you don't need to be fully blocked to interrupt. Prefer
   a short question over a decision the developer might want to make themselves
+- Whenever you ask me a question or report a blocker during execution, end the
+  message with the working directory path: "Working directory: [full path to worktree]"
 
 Before creating the PR, write unit tests and confirm they pass. Use the
 framework appropriate for the project's platform:
