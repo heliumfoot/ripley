@@ -285,8 +285,12 @@ ambiguities or decisions not answerable from the codebase alone, and ask them
 all now. Wait for my answers.
 
 As soon as pre-flight answers are received, create a git worktree and branch
-for that card and begin implementation immediately. Name the branch
-`claude/[TICKET-ID]/[camelCaseName]` where [camelCaseName] is a 2–4 word
+for that card. Choose the most likely branch to branch off (develop is
+normally the default), but always ask the user what branch to use as
+the basis of the worktree branch.
+
+Once the base branch is established, begin implementation immediately.
+Name the branch `claude/[TICKET-ID]/[camelCaseName]` where [camelCaseName] is a 2–4 word
 camel case summary of the work (e.g. `claude/PROJ-123/fixLoginTimeout`). If
 that branch name already exists, try a different camel case name. If no
 distinct name can be found, append an incrementing counter (e.g.
