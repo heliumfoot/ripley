@@ -4,6 +4,10 @@ Your job during the workday is **oversight, not writing code**. Claude selects c
 
 Each ticket produces one pull request. You control how many cards run in parallel — just say no when asked if you want to prepare another.
 
+**Display rules:**
+- Always show the ticket title alongside the ticket number — e.g. `NIHTB-5361 — CDI UI — create layout support * items`, never just `NIHTB-5361` alone
+- Always render PR numbers as clickable links — e.g. [#1659](https://github.com/NU-MSS/MobileToolbox/pull/1659), never just `#1659` or `PR #1659`
+
 ## Before You Start
 
 ### Jira CLI Setup
@@ -136,10 +140,10 @@ Then …
 
 Before selecting new work, Claude checks for in-progress cards that may already be done.
 
-Claude queries Jira for all in-progress cards assigned to you, then uses the GitHub CLI to find pull requests whose source branch contains each ticket's ID. For each card with a merged PR, Claude asks: "Is [TICKET-ID] — [title] complete?"
+Claude queries Jira for all in-progress and rejected cards assigned to you, then uses the GitHub CLI to find pull requests whose source branch contains each ticket's ID. For each card with PRs, Claude shows all PRs (both merged and open, with clickable links) so the user can see the full picture. Then Claude asks: "Is [TICKET-ID] — [title] complete?"
 
 **If yes:**
-- Set the card status to "Acceptance Testing"; if that status is not available, set it to "Ready for QA"
+- Set the card status to "Acceptance Testing"; if unavailable, set it to "Ready for QA"
 - Check the associated worktree:
   - If the worktree is clean and all commits have been pushed: delete the worktree silently
   - If the worktree is not clean or has unpushed commits: ask "This worktree has local changes or unpushed commits — should I commit, push, and delete it, or leave it in place?"
@@ -158,12 +162,12 @@ Claude selects cards through the following flow. This repeats each time a new ca
 
 **In-progress cards first:**
 
-Claude queries Jira for in-progress cards assigned to you in the current sprint, sorted by rank. If there are none, it falls back to unassigned in-progress cards in the current sprint. Unassigned cards are marked so you can tell at a glance:
+Claude queries Jira for in-progress and rejected cards assigned to you in the current sprint, sorted by rank. If there are none, it falls back to unassigned in-progress cards in the current sprint. Unassigned cards are marked so you can tell at a glance:
 
 ```
 In-progress cards:
-1. PROJ-123 — Fix login timeout on slow connections
-2. PROJ-117 — Refactor auth token storage [unassigned]
+1. [L] PROJ-123 — Fix login timeout on slow connections
+2. [M] PROJ-117 — Refactor auth token storage [unassigned]
 3. None of these
 ```
 
@@ -175,15 +179,25 @@ When no in-progress cards remain, or you select "None of these", Claude queries 
 
 ```
 To-do cards (top 5 by rank):
-1. PROJ-131 — Add push notification support
-2. PROJ-134 — Migrate settings screen to new design system
-3. PROJ-138 — Fix crash on tablet rotation
-4. PROJ-140 — Update API client to v2
-5. PROJ-145 — Add unit tests for sync manager
+1. [L] PROJ-131 — Add push notification support
+2. [M] PROJ-134 — Migrate settings screen to new design system
+3. [S] PROJ-138 — Fix crash on tablet rotation
+4. [M] PROJ-140 — Update API client to v2
+5. [S] PROJ-145 — Add unit tests for sync manager
 6. Provide a card ID
 ```
 
 Select a number, or select "Provide a card ID" to type in any ticket ID. Claude immediately moves the selected card to In Progress in Jira, then begins the pre-flight.
+
+**Difficulty indicator and sort order:**
+
+Show each card's complexity (S/M/L/XL) from the Jira size label. If no label exists, Claude estimates based on the ticket description and marks it with `~` (e.g. `[~M]`).
+
+Sort order is a gentle default based on how much work has been done today:
+- **Fewer than 3 cards completed today:** sort hard → easy (fresh energy for heavy work)
+- **3 or more cards completed today:** sort easy → hard (wind down with lighter work)
+
+The developer can always pick any card regardless of sort order.
 
 ---
 
@@ -254,9 +268,10 @@ setup entirely and proceed directly to the merged PR review.
 
 ---
 
-First, run the merged PR review: query my in-progress Jira cards assigned to
-me, then use the GitHub CLI to find pull requests whose source branch contains
-each ticket ID. For each card with a merged PR, ask me if the card is complete.
+First, run the merged PR review: query my in-progress and rejected Jira cards
+assigned to me, then use the GitHub CLI to find pull requests whose source
+branch contains each ticket ID. For each card with PRs, show all PRs (both
+merged and open) with clickable links, then ask me if the card is complete.
 
 If yes:
 - Set the card status to "Acceptance Testing"; if unavailable, set it to
@@ -272,10 +287,12 @@ you've completed that I should close out?" If yes, ask for the IDs and follow
 the same completed card workflow for each.
 
 Once all completed cards have been handled, begin card selection: query
-in-progress cards assigned to me in the current sprint, sorted by rank. If
-there are none, fall back to unassigned in-progress cards in the current
-sprint. Present them numbered with key and title; mark unassigned cards with
-[unassigned]. Add "None of these" as the last option and ask me to select one.
+in-progress and rejected cards assigned to me in the current sprint, sorted
+by rank. If there are none, fall back to unassigned in-progress cards in the
+current sprint. Present them numbered with difficulty indicator, key, and
+title; mark unassigned cards with [unassigned]. Sort by difficulty following
+the [Difficulty indicator and sort order](#difficulty-indicator-and-sort-order)
+rules. Add "None of these" as the last option and ask me to select one.
 
 If I select a to-do card (not already in-progress), move it to In Progress
 in Jira before starting the pre-flight.
