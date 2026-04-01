@@ -557,6 +557,14 @@ When Claude opens a PR after workday execution, it generates the description aut
 
 ---
 
+### Energy-aware card sorting
+
+Card selection now sorts by difficulty based on how many cards have been completed today — heavier cards first when fresh (fewer than 3 completed), lighter cards first when winding down (3 or more completed). This is a gentle default, not a rule; the developer always picks.
+
+The insight is that cognitive energy is a depletable resource. A system that accounts for this — rather than treating every hour as fungible — leads to better output over a full day. See the [Difficulty indicator and sort order](workday.md#difficulty-indicator-and-sort-order) section in workday.md.
+
+---
+
 ### Re-estimating cards
 
 The current guidelines treat complexity estimates (S/M/L/XL) as set once at ticket creation. A workflow for re-estimation may be needed — for example when work turns out to be larger than expected, or when a card is split or merged.
