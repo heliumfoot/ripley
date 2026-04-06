@@ -200,7 +200,9 @@ If there are no upfront questions, Claude proceeds immediately.
 Run this prompt once to start the workday.
 
 ```
-Before doing anything else, run the following setup checks:
+Before doing anything else, print: "▶ Setup checks"
+
+Run the following setup checks:
 
 1. Run `which jira`. If jira is not installed, tell the developer and offer to
    install it:
@@ -254,6 +256,8 @@ setup entirely and proceed directly to the merged PR review.
 
 ---
 
+Print: "▶ Merged PR review"
+
 First, run the merged PR review: query my in-progress Jira cards assigned to
 me, then use the GitHub CLI to find pull requests whose source branch contains
 each ticket ID. For each card with a merged PR, ask me if the card is complete.
@@ -271,7 +275,9 @@ Once all merged PRs have been reviewed, ask: "Are there any other cards
 you've completed that I should close out?" If yes, ask for the IDs and follow
 the same completed card workflow for each.
 
-Once all completed cards have been handled, begin card selection: query
+Once all completed cards have been handled, print: "▶ Card selection"
+
+Begin card selection: query
 in-progress cards assigned to me in the current sprint, sorted by rank. If
 there are none, fall back to unassigned in-progress cards in the current
 sprint. Present them numbered with key and title; mark unassigned cards with
@@ -280,11 +286,15 @@ sprint. Present them numbered with key and title; mark unassigned cards with
 If I select a to-do card (not already in-progress), move it to In Progress
 in Jira before starting the pre-flight.
 
-For the selected card, do the pre-flight: read the ticket, identify any
+For the selected card, print: "▶ Pre-flight: [TICKET-ID]"
+
+Do the pre-flight: read the ticket, identify any
 ambiguities or decisions not answerable from the codebase alone, and ask them
 all now. Wait for my answers.
 
-As soon as pre-flight answers are received, create a git worktree and branch
+As soon as pre-flight answers are received, print: "▶ Executing: [TICKET-ID]"
+
+Create a git worktree and branch
 for that card and begin implementation immediately. Name the branch
 `claude/[TICKET-ID]/[camelCaseName]` where [camelCaseName] is a 2–4 word
 camel case summary of the work (e.g. `claude/PROJ-123/fixLoginTimeout`). If
