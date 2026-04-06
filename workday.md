@@ -148,7 +148,21 @@ Claude queries Jira for all in-progress cards assigned to you, then uses the Git
 
 Once all cards with merged PRs have been reviewed, ask: "Are there any other cards you've completed that I should close out?" If yes, ask for the IDs and follow the same completed card workflow for each: set the status to "Acceptance Testing" (or "Ready for QA" if unavailable), and handle the worktree as described above.
 
-Once all completed cards have been handled, proceed to card selection.
+Once all completed cards have been handled, proceed to worktree resume.
+
+---
+
+## Worktree Resume
+
+Before presenting card options, Claude scans existing git worktrees and cross-references them with your open in-progress Jira cards. If any worktrees match an open card, they are surfaced first:
+
+```
+Worktrees with in-progress work:
+1. PROJ-123 — Fix login timeout  [claude/PROJ-123/fixLoginTimeout]
+2. Skip — start a new card
+```
+
+If you select a worktree, Claude skips card selection and pre-flight and resumes execution of that card directly. If you select "Skip", Claude proceeds to card selection as normal.
 
 ---
 
@@ -171,7 +185,7 @@ Select a number. Claude begins the pre-flight for that card immediately.
 
 **When in-progress cards are exhausted:**
 
-When no in-progress cards remain, or you select "None of these", Claude queries the top 5 to-do cards in the current sprint by rank:
+When no in-progress cards remain, or you select "None of these", Claude queries the top 5 to-do cards in the current sprint, sorted by rank:
 
 ```
 To-do cards (top 5 by rank):
@@ -191,7 +205,15 @@ Select a number, or select "Provide a card ID" to type in any ticket ID. Claude 
 
 Before touching any code for a card, Claude reads the ticket, identifies any ambiguities or decisions that aren't answerable from the codebase alone, and asks them all at once. Wait for answers before Claude proceeds.
 
-If there are no upfront questions, Claude proceeds immediately.
+After receiving your answers, Claude enters plan mode and presents an implementation plan before writing any code. The plan covers:
+- Summary of what will be implemented
+- Files to be created or modified
+- Key design decisions
+- Test approach
+
+Claude waits for you to explicitly say "execute" (or equivalent) before creating the worktree and beginning implementation.
+
+If there are no upfront questions, Claude skips directly to the plan.
 
 ---
 
@@ -275,13 +297,32 @@ Once all merged PRs have been reviewed, ask: "Are there any other cards
 you've completed that I should close out?" If yes, ask for the IDs and follow
 the same completed card workflow for each.
 
-Once all completed cards have been handled, print: "▶ Card selection"
+Once all completed cards have been handled, print: "▶ Checking for in-progress worktrees"
+
+Run `git worktree list` and cross-reference the results with your open
+in-progress Jira cards. If any worktrees match an open card, present them:
+
+```
+Worktrees with in-progress work:
+1. PROJ-123 — Fix login timeout  [claude/PROJ-123/fixLoginTimeout]
+2. Skip — start a new card
+```
+
+If I select a worktree, print: "▶ Resuming: [TICKET-ID]" and skip card
+selection and pre-flight — go straight to execution for that card using the
+existing worktree.
+
+If no worktrees match open cards, or I select "Skip", print: "▶ Card selection"
 
 Begin card selection: query
 in-progress cards assigned to me in the current sprint, sorted by rank. If
 there are none, fall back to unassigned in-progress cards in the current
 sprint. Present them numbered with key and title; mark unassigned cards with
 [unassigned]. Add "None of these" as the last option and ask me to select one.
+
+When no in-progress cards remain or I select "None of these", query the top 5
+to-do cards in the current sprint, sorted by rank. Add "Provide a card ID" as
+the last option.
 
 If I select a to-do card (not already in-progress), move it to In Progress
 in Jira before starting the pre-flight.
@@ -292,7 +333,19 @@ Do the pre-flight: read the ticket, identify any
 ambiguities or decisions not answerable from the codebase alone, and ask them
 all now. Wait for my answers.
 
-As soon as pre-flight answers are received, print: "▶ Executing: [TICKET-ID]"
+After receiving answers, print: "▶ Planning: [TICKET-ID]"
+
+Enter plan mode and produce an implementation plan before writing any code.
+The plan must include:
+- Summary of what will be implemented
+- Files to be created or modified
+- Key design decisions
+- Test approach
+
+Wait for me to explicitly say "execute" (or equivalent) before proceeding.
+If there are no pre-flight questions, skip directly to the plan step.
+
+As soon as I say "execute", print: "▶ Executing: [TICKET-ID]"
 
 Create a git worktree and branch
 for that card and begin implementation immediately. Name the branch
@@ -303,6 +356,9 @@ distinct name can be found, append an incrementing counter (e.g.
 `claude/PROJ-123/fixLoginTimeout2`).
 
 After creating the worktree, print: "Working directory: [full path to worktree]"
+
+Also print: "▶ Status: [PROJECT-NAME] | [TICKET-ID] — [ticket title]"
+where PROJECT-NAME is the name of the repo root directory.
 
 While that card is executing, ask: "Would you like to prepare another card
 for me to work on in parallel?" If yes, follow the card selection flow and
@@ -339,8 +395,12 @@ Do not create the PR until all tests pass.
 Completion happens in two stages.
 
 **Stage 1 — Implementation complete:**
-1. Create a draft pull request using the GitHub CLI and show me the URL
-2. Ask: "Is this pull request ready for review?"
+1. Create a draft pull request using the GitHub CLI. The PR description must
+   include a test plan section covering:
+   - **Automated tests:** list the test files/suites added and what scenarios they cover
+   - **Manual tests:** step-by-step scenarios the developer should verify by hand before approving
+2. Show me the PR URL
+3. Print the test plan to the console, then ask: "Is this pull request ready for review?"
 
 From this point, continue responding to any prompts to refine the solution.
 After every response, ask: "Is this pull request ready for review?"
@@ -358,5 +418,11 @@ When the developer answers yes:
 ## Pull Request Reviews
 
 When Claude completes the implementation it opens a draft PR and begins asking after every response whether it's ready for review. Use this time to read the diff, prompt Claude for refinements, or push your own changes to the branch. When you're satisfied, tell Claude the PR is ready — it will add the Jira comment and mark the PR as Ready for Review, making it visible to the rest of the team.
+
+Every draft PR includes a test plan section in the description covering:
+- **Automated tests:** the test files/suites added and the scenarios they cover
+- **Manual tests:** step-by-step scenarios to verify by hand before approving
+
+The test plan is also printed to the console alongside the "Is this pull request ready for review?" prompt.
 
 > **Note on PR descriptions:** Claude will generate the PR description automatically. A standard template for PR descriptions is planned — see the Open Questions section of the main guidelines.
