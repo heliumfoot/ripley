@@ -356,14 +356,14 @@ distinct name can be found, append an incrementing counter (e.g.
 `claude/PROJ-123/fixLoginTimeout2`).
 
 After creating the worktree, print: "Working directory: [full path to worktree]"
-
 Also print: "▶ Status: [PROJECT-NAME] | [TICKET-ID] — [ticket title]"
 where PROJECT-NAME is the name of the repo root directory.
 
-While that card is executing, ask: "Would you like to prepare another card
-for me to work on in parallel?" If yes, follow the card selection flow and
-pre-flight the next card. Start it as soon as pre-flight answers arrive.
-Repeat this offer each time a new card begins executing.
+**Parallel work:** After handing off the card, always ask: "Would you like
+to prepare another card for me to work on in parallel?" If yes, follow the
+card selection flow and pre-flight the next card. Start it as soon as
+pre-flight answers arrive. Repeat this offer each time a new card begins
+executing.
 
 For each card in execution:
 - Make judgment calls consistent with existing patterns
@@ -374,8 +374,20 @@ For each card in execution:
 - Whenever you ask me a question or report a blocker during execution, end the
   message with the working directory path: "Working directory: [full path to worktree]"
 
-Before creating the PR, write unit tests and confirm they pass. Use the
-framework appropriate for the project's platform:
+**Before creating the PR, complete every step in the [Pre-PR Checklist](#pre-pr-checklist).** If a step doesn't apply, ask the developer before skipping it.
+
+---
+
+## Pre-PR Checklist
+
+Run through each step in order before creating the PR.
+
+### 1. Tests
+
+Only add tests that are actually valuable and practical. If the change is
+pure UI, config-only, or trivial, skip this step. When tests are warranted,
+write them and confirm they pass. Use the framework appropriate for the
+project's platform:
 - Native iOS / cross-platform Swift: XCTest
 - Native Android: JUnit
 - Flutter: flutter_test
@@ -391,6 +403,28 @@ straightforward issues silently; ask if there is meaningful uncertainty about
 the right approach.
 
 Do not create the PR until all tests pass.
+
+### 2. Self-review
+
+Self-review the full diff. Check for: leftover debug code, missing error
+handling, naming consistency with the existing codebase, unnecessary changes,
+and anything that doesn't match existing patterns. Fix any issues found
+before proceeding.
+
+### 3. Build
+
+Build the project locally and fix all compiler errors before pushing or
+creating a PR. Use the appropriate build tool for the repo (`xcodebuild`,
+`./gradlew`, `fvm flutter build`). Do not push code that doesn't compile.
+
+### 4. PR description
+
+When creating the PR, check for a PR template in the repo (e.g.
+`.github/pull_request_template.md`). If one exists, fill it out completely.
+If the repo has no template, write a concise description and include a
+"How to Test" section with steps to verify the change.
+
+---
 
 Completion happens in two stages.
 
