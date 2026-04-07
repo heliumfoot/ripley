@@ -354,7 +354,6 @@ As soon as I say "execute", print: "▶ Executing: [TICKET-ID]"
 
 Create a git worktree and branch for that card and begin implementation immediately. Name the branch
 `claude/[TICKET-ID]/[camelCaseName]` where [camelCaseName] is a 2–4 word
-
 camel case summary of the work (e.g. `claude/PROJ-123/fixLoginTimeout`). If
 that branch name already exists, try a different camel case name. If no
 distinct name can be found, append an incrementing counter (e.g.
