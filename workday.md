@@ -434,7 +434,8 @@ Completion happens in two stages.
    - **Automated tests:** list the test files/suites added and what scenarios they cover
    - **Manual tests:** step-by-step scenarios the developer should verify by hand before approving
 2. Show me the PR URL
-3. Print the test plan to the console, then ask: "Is this pull request ready for review?"
+3. Add Copilot as a reviewer: `gh api /repos/OWNER/REPO/pulls/PR_NUMBER/requested_reviewers --method POST --field 'reviewers[]=copilot-pull-request-reviewer[bot]'`
+4. Print the test plan to the console, then ask: "Is this pull request ready for review?"
 
 From this point, continue responding to any prompts to refine the solution.
 After every response, ask: "Is this pull request ready for review?"
