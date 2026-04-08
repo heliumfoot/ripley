@@ -17,7 +17,7 @@ This ensures `gh` and `python3` are authenticated and available, and surfaces an
 
 Then ask me two questions:
 
-1. "Which repos should I analyze? Provide a GitHub team in `org/team-name` format, a list of `owner/repo` names, or a mix of both."
+1. "Which repos should I analyze? Provide a GitHub org (e.g. `myorg`), a GitHub team in `org/team-name` format, a list of `owner/repo` names, or any mix of these."
 2. "What time period? (e.g. 'last 30 days', 'last sprint', 'since 2025-01-01')"
 
 Wait for both answers before continuing.
@@ -26,13 +26,17 @@ Wait for both answers before continuing.
 
 **Resolving repos and team members:**
 
+If a GitHub org was provided (e.g. `myorg`):
+- Resolve the repo list: `gh api /orgs/myorg/repos --paginate --jq '[.[].full_name]'`
+- The member list is built from the PR authors and reviewers found across all repos in the org.
+
 If a GitHub team was provided (e.g. `myorg/my-team`):
 - Resolve the member list: `gh api /orgs/myorg/teams/my-team/members --jq '[.[].login]'`
 - Resolve the repo list: `gh api /orgs/myorg/teams/my-team/repos --jq '[.[].full_name]'`
 
-If individual repos were also provided (beyond the team's repos), add them to the repo list. After fetching all PRs and reviews from those extra repos, expand the team member list by unioning in any author or reviewer logins found there. These added members appear in the final table and can receive ⚠️ if they did no reviews.
+If individual repos were also provided (beyond the org's or team's repos), add them to the repo list. After fetching all PRs and reviews from those extra repos, expand the member list by unioning in any author or reviewer logins found there. These added members appear in the final table and can receive ⚠️ if they did no reviews.
 
-If only individual repos were provided (no team), the member list is built entirely from the PR authors and reviewers found across all those repos.
+If only individual repos were provided (no org or team), the member list is built entirely from the PR authors and reviewers found across all those repos.
 
 Convert the time window into an ISO 8601 date range. For relative windows like "last 30 days", compute the start date from today's date.
 
