@@ -324,13 +324,18 @@ In parallel with card selection, run the pr-team-review skill in the background:
 - Check if the pr-team-review skill is available in the current project.
   If not, ask: "I'd like to check your PR review load, but the pr-team-review
   skill isn't in this project. Can I fetch it from github.com/heliumfoot/ripley?"
-  If yes: `gh api /repos/heliumfoot/ripley/contents/pr-team-review.md --jq '.content' | base64 -d`
+  If yes: `gh api /repos/heliumfoot/ripley/contents/pr-team-review.md -H 'Accept: application/vnd.github.raw+json'`
   and follow those instructions. If no, skip the review load check entirely.
 - Infer the org from `git remote get-url origin`
 - Use a 7-day time window
 - Get the current user with `gh api /user --jq '.login'`
-- Skip the interactive questions; suppress all output
-- Store the current user's share % and the team average share % for later use
+- Run the skill non-interactively by supplying its required inputs explicitly:
+  use the inferred org/repo scope as the answer to the repos question, and
+  use "last 7 days" as the answer to the time-window question; suppress all output
+- Store the current user's share % for later use
+- Also store the number of reviewers included in the pr-team-review output for
+  that 7-day window; compute and store the team average share % as
+  `100% / reviewer count` (do not assume the skill prints a team average)
 
 Begin card selection: query
 in-progress cards assigned to me in the current sprint, sorted by rank. If
@@ -384,7 +389,7 @@ where PROJECT-NAME is the name of the repo root directory.
   points below average. Would you like to work on open PRs awaiting your
   review, or should I prepare another card?"
   If they choose PR reviews, list open PRs where they've been requested as
-  a reviewer: `gh search prs --review-requested=@me --state open`
+  a reviewer within the previously inferred org: `gh search prs --owner "$INFERRED_ORG" --review-requested=@me --state open`
 - Otherwise (check not ready, or user is at/above average), ask:
   "Would you like to prepare another card for me to work on in parallel?"
 
