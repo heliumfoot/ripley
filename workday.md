@@ -367,6 +367,13 @@ executing.
 
 For each card in execution:
 - Make judgment calls consistent with existing patterns
+- Write code that follows these principles:
+  - **Human readable** — prefer clarity over cleverness
+  - **Modularized** — break logic into small, focused units
+  - **DRY** — don't repeat yourself; extract shared logic
+  - **No magic numbers** — give constants meaningful names
+  - **Self-documenting names** — variables, functions, and types should explain themselves without comments
+  - **Prefer immutability** — avoid mutable state where possible
 - Log each non-obvious decision so it appears at review time
 - If you hit uncertainty that a quick question would resolve better than your
   best guess, ask — you don't need to be fully blocked to interrupt. Prefer
@@ -408,8 +415,10 @@ Do not create the PR until all tests pass.
 
 Self-review the full diff. Check for: leftover debug code, missing error
 handling, naming consistency with the existing codebase, unnecessary changes,
-and anything that doesn't match existing patterns. Fix any issues found
-before proceeding.
+and anything that doesn't match existing patterns. Also verify the coding
+guidelines were followed: code is human readable, logic is modularized, no
+repeated code, no magic numbers, names are self-documenting, and immutability
+is preferred. Fix any issues found before proceeding.
 
 ### 3. Build
 
