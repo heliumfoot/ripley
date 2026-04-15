@@ -368,10 +368,14 @@ The plan must include:
 Wait for me to explicitly say "execute" (or equivalent) before proceeding.
 If there are no pre-flight questions, skip directly to the plan step.
 
+Ask the user what the default branch is for this project if not known.
+
+Ask the user what branch to branch off (use the default for the suggestion if known)
+and confirm the worktree branch name to use in this PR with the user.
+
 As soon as I say "execute", print: "▶ Executing: [TICKET-ID]"
 
-Create a git worktree and branch
-for that card and begin implementation immediately. Name the branch
+Create a git worktree and branch for that card and begin implementation immediately. Name the branch
 `claude/[TICKET-ID]/[camelCaseName]` where [camelCaseName] is a 2–4 word
 camel case summary of the work (e.g. `claude/PROJ-123/fixLoginTimeout`). If
 that branch name already exists, try a different camel case name. If no
