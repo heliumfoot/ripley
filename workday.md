@@ -168,6 +168,12 @@ If you select a worktree, Claude skips card selection and pre-flight and resumes
 
 ## Card Selection
 
+While cards are being presented, Claude kicks off the pr-team-review skill in
+the background (org inferred from the git remote, last 7 days). The result is
+only surfaced when Claude offers to prepare another card — if your review share
+is below the team average, Claude will tell you how far below and ask if you'd
+rather work on open PRs instead.
+
 Claude selects cards through the following flow. This repeats each time a new card is needed.
 
 **In-progress cards first:**
@@ -314,6 +320,23 @@ existing worktree.
 
 If no worktrees match open cards, or I select "Skip", print: "▶ Card selection"
 
+In parallel with card selection, run the pr-team-review skill in the background:
+- Check if the pr-team-review skill is available in the current project.
+  If not, ask: "I'd like to check your PR review load, but the pr-team-review
+  skill isn't in this project. Can I fetch it from github.com/heliumfoot/ripley?"
+  If yes: `gh api /repos/heliumfoot/ripley/contents/pr-team-review.md -H 'Accept: application/vnd.github.raw+json'`
+  and follow those instructions. If no, skip the review load check entirely.
+- Infer the org from `git remote get-url origin`
+- Use a 7-day time window
+- Get the current user with `gh api /user --jq '.login'`
+- Run the skill non-interactively by supplying its required inputs explicitly:
+  use the inferred org/repo scope as the answer to the repos question, and
+  use "last 7 days" as the answer to the time-window question; suppress all output
+- Store the current user's share % for later use
+- Also store the number of reviewers included in the pr-team-review output for
+  that 7-day window; compute and store the team average share % as
+  `100% / reviewer count` (do not assume the skill prints a team average)
+
 Begin card selection: query
 in-progress cards assigned to me in the current sprint, sorted by rank. If
 there are none, fall back to unassigned in-progress cards in the current
@@ -359,11 +382,20 @@ After creating the worktree, print: "Working directory: [full path to worktree]"
 Also print: "▶ Status: [PROJECT-NAME] | [TICKET-ID] — [ticket title]"
 where PROJECT-NAME is the name of the repo root directory.
 
-**Parallel work:** After handing off the card, always ask: "Would you like
-to prepare another card for me to work on in parallel?" If yes, follow the
-card selection flow and pre-flight the next card. Start it as soon as
-pre-flight answers arrive. Repeat this offer each time a new card begins
-executing.
+**Parallel work:** After handing off the card:
+- If the background pr-team-review check has completed and the user's share
+  is below the team average, ask:
+  "Your review share is X% vs a team average of Y% — you're Z percentage
+  points below average. Would you like to work on open PRs awaiting your
+  review, or should I prepare another card?"
+  If they choose PR reviews, list open PRs where they've been requested as
+  a reviewer within the previously inferred org: `gh search prs --owner "$INFERRED_ORG" --review-requested=@me --state open`
+- Otherwise (check not ready, or user is at/above average), ask:
+  "Would you like to prepare another card for me to work on in parallel?"
+
+If they want another card, follow the card selection flow and pre-flight the
+next card. Start it as soon as pre-flight answers arrive. Repeat this offer
+each time a new card begins executing.
 
 For each card in execution:
 - Make judgment calls consistent with existing patterns
