@@ -6,9 +6,9 @@ Set up an integration-testing session for a ticket on the NBT / RMP pair. The de
 
 ## Repo vocabulary
 
-- **RMP** = `~/Developer/heliumfoot/RemoteMobileParticipant` — Flutter participant app (Android + iOS). Base branch: `develop`.
-- **NBT / ios-assessments** = `~/Developer/heliumfoot/ios-assessments` — native iOS examiner app. Base branch: `developmentForBanffV3Remote`. Xcode project: `mss-admin/admin-shell.xcodeproj`. Likely scheme: `nih-baby-toolbox-debug` (ask if a different variant is needed).
-- **Worktrees dir**: `~/Developer/heliumfoot/worktrees/` — standard location for per-ticket checkouts.
+- **RMP** = `$RMP_PATH` — Flutter participant app (Android + iOS). Base branch: `develop`.
+- **NBT / ios-assessments** = `$NBT_PATH` — native iOS examiner app. Base branch: `developmentForBanffV3Remote`. Xcode project: `mss-admin/admin-shell.xcodeproj`. Likely scheme: `nih-baby-toolbox-debug` (ask if a different variant is needed).
+- **Worktrees dir**: `$WORKTREE_PATH` — standard location for per-ticket checkouts.
 
 ## Arguments
 
