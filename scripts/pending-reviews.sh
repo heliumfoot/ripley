@@ -21,7 +21,7 @@
 # To install for the whole team:
 #   1. Copy this script to ~/bin/pending-reviews (or anywhere on PATH)
 #   2. chmod +x ~/bin/pending-reviews
-#   3. Make sure ~/bin is on PATH: export PATH="$HOME/bin:$PATH" in ~/.zshrc
+#   3. Make sure ~/bin is on PATH: export PATH="$HOME/bin:$PATH" in the current $SHELL rc file
 #   4. Each user must have `gh auth login` completed
 #
 
