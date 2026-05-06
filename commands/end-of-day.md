@@ -121,7 +121,7 @@ If enabled:
 
 Write a concise end-of-day summary. Pulls from:
 
-1. **Commits today** across each NU-MSS repo the developer worked in (`~/Developer/heliumfoot/*` — scan each for `git log --author=@me --since=midnight --oneline`). Include the repo name in each line.
+1. **Commits today** across each NU-MSS repo the developer worked in (`$PROJECT_PATH/*` — scan each for `git log --author=@me --since=midnight --oneline`). Include the repo name in each line.
 2. **PRs opened / updated / merged** today:
    ```bash
    gh search prs --author=@me --owner=NU-MSS --updated=">=$(date +%Y-%m-%d)" --json number,title,state,repository,mergedAt,url
