@@ -49,7 +49,7 @@ For each app the developer wants to run, list available devices and ask them to 
 
 Present as a numbered pick-list, marked by category. If a physical iOS device is picked for ios-assessments, **do not attempt to build** — print:
 
-> Running on a physical iOS device requires code signing. Open `~/Developer/heliumfoot/ios-assessments/mss-admin/admin-shell.xcodeproj` in Xcode, check out `<branch>`, select scheme `<scheme>`, and Cmd-R. Let me know when it's running.
+> Running on a physical iOS device requires code signing. Open `$NBT_PATH/mss-admin/admin-shell.xcodeproj` in Xcode, check out `<branch>`, select scheme `<scheme>`, and Cmd-R. Let me know when it's running.
 
 ## Phase 4 — Worktree setup (the load-bearing guarantee)
 
@@ -58,16 +58,16 @@ For each app being built:
 1. Determine the target branch from Phase 1 (primary app) or Phase 2 (paired app).
 2. Check if a worktree already has that branch checked out: `git worktree list` in the repo.
 3. If yes, use that worktree path.
-4. If no, create one at `~/Developer/heliumfoot/worktrees/<ticket>-<repo>` (or `<branch-basename>-<repo>` if no ticket for the paired side). Use `git worktree add <path> <branch>` — fetch first if the branch is remote-only.
+4. If no, create one at `$WORKTREE_PATH/<ticket>-<repo>` (or `<branch-basename>-<repo>` if no ticket for the paired side). Use `git worktree add <path> <branch>` — fetch first if the branch is remote-only.
 5. Print the worktree path and branch prominently:
 
 ```
 ── RMP ──────────────────────────
-   Worktree: ~/Developer/heliumfoot/worktrees/NIHTB-5483-rmp
+   Worktree: $WORKTREE_PATH/NIHTB-5483-rmp
    Branch:   claude/NIHTB-5483/leaveSessionOnMeetingBackground
    Device:   Pixel 7 Pro (emulator)
 ── ios-assessments ──────────────
-   Worktree: ~/Developer/heliumfoot/ios-assessments
+   Worktree: $NBT_PATH
    Branch:   developmentForBanffV3Remote
    Sim:      iPhone 15 (iOS 18.0)
    Scheme:   nih-baby-toolbox-debug
@@ -123,7 +123,7 @@ Same success/failure heuristics.
 2. Open Simulator.app if not visible: `open -a Simulator`.
 3. Build:
    ```bash
-   cd ~/Developer/heliumfoot/ios-assessments/mss-admin
+   cd $NBT_PATH/mss-admin
    xcodebuild -project admin-shell.xcodeproj \
               -scheme <scheme> \
               -destination "platform=iOS Simulator,id=<udid>" \
@@ -148,7 +148,7 @@ Same success/failure heuristics.
 
 ### ios-assessments workspace/scheme conflict
 
-If `~/Developer/heliumfoot/ios-assessments` (the main checkout) is on a different branch than the one you want built, you have a problem: there's no worktree pattern for Xcode projects that reliably plays well with CocoaPods / derived data. Ask the developer:
+If `$NBT_PATH` (the main checkout) is on a different branch than the one you want built, you have a problem: there's no worktree pattern for Xcode projects that reliably plays well with CocoaPods / derived data. Ask the developer:
 
 > ios-assessments main checkout is on `<current-branch>`, but this test wants `<target-branch>`. Xcode doesn't love being pointed at a worktree. Two options: (a) I can switch the main checkout to `<target-branch>` (your current uncommitted work stays in the stash) or (b) you keep your setup and I skip the ios-assessments auto-build — please run from Xcode manually.
 
