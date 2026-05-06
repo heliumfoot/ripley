@@ -31,7 +31,7 @@ No confirmation needed — these processes are safely restartable and are leaks.
 Scan `~/Library/Developer/Xcode/DerivedData/` and classify each folder:
 
 1. Read `<derived-data-folder>/info.plist` (or `WorkspacePath-<hash>/info.plist`) to get the source `WorkspacePath`.
-2. **NU-MSS-only filter**: only consider folders whose source path is under `~/Developer/heliumfoot/`. Skip everything else silently — the developer has personal projects that shouldn't be touched.
+2. **NU-MSS-only filter**: only consider folders whose source path is under `$PROJECT_PATH`. Skip everything else silently — the developer may have personal projects that shouldn't be touched.
 3. For each matching folder:
    - **Orphaned** — source path no longer exists (e.g. deleted worktree): mark as auto-safe.
    - **Active** — source path exists: ask before clearing, showing size.
@@ -61,7 +61,7 @@ Note: clearing active DerivedData forces a clean build next time. Default to **N
 
 Targets:
 1. `/tmp/*build*.log`, `/tmp/*publish*.log`, `/tmp/mtb-android-publish.log`, `/tmp/rmp-*.log`, `/tmp/nbt-*.log` older than today → delete.
-2. MobileToolboxAndroid heap dumps: `~/Developer/heliumfoot/MobileToolboxAndroid/*.hprof` — delete these silently.
+2. MobileToolboxAndroid heap dumps: `$ANDROID_PATH/*.hprof` — delete these silently.
 3. **Do NOT** touch `pub-cache`, `CocoaPods` cache, `~/.gradle/caches/`, or `mavenLocal()` — those are expensive to rebuild. Only the orphaned DerivedData route addresses Xcode cache reclamation.
 4. **Do NOT** recurse into live worktrees to delete `build/` or `Pods/` — those belong to the worktree lifecycle, addressed in Phase 4.
 
@@ -131,9 +131,9 @@ Write a concise end-of-day summary. Pulls from:
 5. **Upcoming**:
    - Open PRs awaiting review (same-repo or cross-repo).
    - In-progress Jira cards not touched today.
-   - Known blockers (from `~/.claude/projects/-Users-reschneebaum-Developer-heliumfoot-RemoteMobileParticipant/memory/MEMORY.md` — scan for entries tagged `project` type that look active).
+   - Known blockers (check memory files).
 
-Format (terse, no emoji):
+Format:
 
 ```
 ── End of day — 2026-04-23 ──
@@ -189,7 +189,7 @@ When invoked as `/end-of-day preview`:
 
 - **Never** delete a worktree with dirty or unpushed state. Ever. Surface it so the dev can resolve.
 - **Never** clear `pub-cache`, `CocoaPods cache`, `~/.gradle/caches/`, or `~/.m2/` — those represent real minutes of rebuild time, and `/publish-android-deps` is the right tool for targeted mavenLocal housekeeping.
-- **Never** clear DerivedData outside of NU-MSS projects (filter strict on `~/Developer/heliumfoot/` source paths).
+- **Never** clear DerivedData outside of NU-MSS projects (filter strict on `$PROJECT_PATH` source paths).
 - **Never** empty Trash without the `--with-trash` flag AND explicit confirmation.
 - If a phase fails partway through (e.g. permission denied on a delete), stop that phase and report — don't try to recover silently.
 
