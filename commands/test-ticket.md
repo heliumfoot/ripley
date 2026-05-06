@@ -45,7 +45,7 @@ For each app the developer wants to run, list available devices and ask them to 
 **Critical constraint: when both apps run on iOS simulators, they must be on SEPARATE sims.** The two apps communicate in real time via Zoom, and only one sim can be "active" at a time — putting both on the same sim breaks the test. Additionally, RMP is phone-intended (iPhone sim) while NBT is iPad-only — so the natural pairing is an iPhone sim for RMP + an iPad sim for NBT. Don't offer "same sim for both" as a convenience.
 
 - **RMP (Flutter):** `cd <rmp-worktree> && fvm flutter devices --machine` returns JSON with `id`, `name`, `targetPlatform`. Group into: physical Android, Android emulator, iOS simulator, iOS physical, macOS/web (filter out).
-- **ios-assessments (native iOS):** `xcrun simctl list devices --json` for simulators (filter to `isAvailable == true` AND `'iPad' in name` — **the NBT examiner app is iPad-only**, iPhone simulators aren't useful). `xcrun xctrace list devices 2>&1 | grep -v Simulator` for physical iOS devices (filter to iPad models). When listing simulators, group by model family (Air / Pro / mini / base iPad) and show latest iOS per model first; highlight any already-booted sim since reusing it saves time.
+- **ios-assessments (native iOS):** `xcrun simctl list devices --json` for simulators (filter to `isAvailable == true` AND `'iPad' in name` — **the NBT examiner app is iPad-only**, iPhone simulators aren't useful). `xcrun xctrace list devices 2>&1 | grep -v Simulator` for physical iOS devices (filter to iPad models). **Note: the default examiner-supported iPad is the 11" iPad Pro**. When listing simulators, group by model family (Air / Pro / mini / base iPad) and show latest iOS per model first; highlight any already-booted sim since reusing it saves time.
 
 Present as a numbered pick-list, marked by category. If a physical iOS device is picked for ios-assessments, **do not attempt to build** — print:
 
@@ -81,7 +81,9 @@ Before kicking off either build, run `git fetch && git pull --ff-only` on the br
 - Teammates frequently merge PRs that affect shared infrastructure (screen sharing, lifecycle helpers, PEAP commands). Testing against a stale checkout wastes cycles debugging bugs that were already fixed upstream.
 - The default branch (`developmentForBanffV3Remote` for NBT, `develop` for RMP) moves multiple times per day during active sprints.
 
-If the tree has uncommitted tracked changes, stop and ask the developer — don't silently stash. Untracked files are fine to leave alone. If the pull results in new commits, rebuild even if a prior binary is already installed on the device.
+If the tree has uncommitted tracked changes, stop and ask the developer — don't silently stash. Untracked files are fine to leave alone. If the pull results in new commits, rebuild even if a prior binary is already installed on the device. 
+
+*Note: `fvm flutter pub get` or `flutter pub get` is often required when switching to a new RMP worktree.*
 
 ## Phase 5 — Build and launch
 
