@@ -209,13 +209,16 @@ Select a number, or select "Provide a card ID" to type in any ticket ID. Claude 
 
 ## Per-Card Pre-Flight
 
-Before touching any code for a card, Claude reads the ticket, identifies any ambiguities or decisions that aren't answerable from the codebase alone, and asks them all at once. Wait for answers before Claude proceeds.
+Before touching any code for a card, Claude reads the ticket and checks the acceptance criteria. If the card has no acceptance criteria, or they are too vague to verify the work against, Claude asks: "This card doesn't have good acceptance criteria. Would you like to add some now, or skip this card and pick another?" Wait for the answer before proceeding. If you choose to add criteria, Claude helps draft them and saves them to the ticket. If you skip, Claude returns to card selection.
+
+Once acceptance criteria are in place, Claude identifies any remaining ambiguities or decisions that aren't answerable from the codebase alone, and asks them all at once. Wait for answers before Claude proceeds.
 
 After receiving your answers, Claude enters plan mode and presents an implementation plan before writing any code. The plan covers:
 - Summary of what will be implemented
 - Files to be created or modified
 - Key design decisions
-- Test approach
+- **Potential edge cases** the implementation must handle
+- Test approach — prefer unit tests that prove each acceptance criterion is met
 
 Claude waits for you to explicitly say "execute" (or equivalent) before creating the worktree and beginning implementation.
 
@@ -352,9 +355,16 @@ in Jira before starting the pre-flight.
 
 For the selected card, print: "▶ Pre-flight: [TICKET-ID]"
 
-Do the pre-flight: read the ticket, identify any
-ambiguities or decisions not answerable from the codebase alone, and ask them
-all now. Wait for my answers.
+Do the pre-flight: read the ticket. First, check the acceptance criteria. If
+the card has no acceptance criteria, or they are too vague to verify the work
+against, ask: "This card doesn't have good acceptance criteria. Would you
+like to add some now, or skip this card and pick another?" Wait for the
+answer. If the developer wants to add criteria, help them draft them and
+save them to the ticket via `jira issue edit`. If they skip, return to card
+selection.
+
+Then identify any remaining ambiguities or decisions not answerable from the
+codebase alone, and ask them all now. Wait for my answers.
 
 After receiving answers, print: "▶ Planning: [TICKET-ID]"
 
@@ -363,7 +373,8 @@ The plan must include:
 - Summary of what will be implemented
 - Files to be created or modified
 - Key design decisions
-- Test approach
+- **Potential edge cases** the implementation must handle
+- Test approach — prefer unit tests that prove each acceptance criterion is met
 
 Wait for me to explicitly say "execute" (or equivalent) before proceeding.
 If there are no pre-flight questions, skip directly to the plan step.
@@ -415,6 +426,7 @@ For each card in execution:
   - **No magic numbers** — give constants meaningful names
   - **Self-documenting names** — variables, functions, and types should explain themselves without comments
   - **Prefer immutability** — avoid mutable state where possible
+  - **Testable** — prefer designs that can be exercised by unit tests; isolate side effects so logic can be verified in isolation
 - Log each non-obvious decision so it appears at review time
 - If you hit uncertainty that a quick question would resolve better than your
   best guess, ask — you don't need to be fully blocked to interrupt. Prefer
@@ -432,19 +444,23 @@ Run through each step in order before creating the PR.
 
 ### 1. Tests
 
-Only add tests that are actually valuable and practical. If the change is
-pure UI, config-only, or trivial, skip this step. When tests are warranted,
-write them and confirm they pass. Use the framework appropriate for the
-project's platform:
+Wherever possible, write unit tests that prove the work in this PR meets the
+card's acceptance criteria. These tests must be added to the project's test
+target so they run on every future build — not held off to the side as
+one-off scripts. Use the framework appropriate for the project's platform:
 - Native iOS / cross-platform Swift: XCTest
 - Native Android: JUnit
 - Flutter: flutter_test
 - Node.js / Firebase / Amplify: Jest
 
 Test public interfaces and meaningful branching logic — happy path, error
-paths, and edge cases that could realistically behave differently. Do not test
-private helpers, simple getters/setters, or generated code. Aim for ones to
-tens of tests per card, not exhaustive line coverage.
+paths, and edge cases identified during planning. Do not test private
+helpers, simple getters/setters, or generated code. Aim for ones to tens of
+tests per card, not exhaustive line coverage.
+
+If a piece of the change genuinely cannot be exercised by a unit test (pure
+UI, config-only, integrations that can't be stubbed), note it explicitly so
+it is covered in the manual test plan instead.
 
 If tests fail, apply the same judgment used for questions during execution: fix
 straightforward issues silently; ask if there is meaningful uncertainty about
@@ -461,11 +477,20 @@ guidelines were followed: code is human readable, logic is modularized, no
 repeated code, no magic numbers, names are self-documenting, and immutability
 is preferred. Fix any issues found before proceeding.
 
-### 3. Build
+### 3. Build & verify
 
 Build the project locally and fix all compiler errors before pushing or
 creating a PR. Use the appropriate build tool for the repo (`xcodebuild`,
 `./gradlew`, `fvm flutter build`). Do not push code that doesn't compile.
+
+Then dispatch a background agent to independently verify the branch:
+- The target builds without error
+- **All** unit tests in the project pass — not just the ones added by this
+  card
+
+Wait for the background agent to report success before opening the PR. If it
+reports failures, fix the underlying issue and re-run the verification.
+Record the verification result so it can be referenced in the PR's test plan.
 
 ### 4. PR description
 
@@ -481,8 +506,12 @@ Completion happens in two stages.
 **Stage 1 — Implementation complete:**
 1. Create a draft pull request using the GitHub CLI. The PR description must
    include a test plan section covering:
-   - **Automated tests:** list the test files/suites added and what scenarios they cover
-   - **Manual tests:** step-by-step scenarios the developer should verify by hand before approving
+   - **Automated tests:** confirmation that the full unit test suite passed
+     (from the background-agent verification in step 3 of the Pre-PR
+     Checklist), plus the test files/suites added by this card and the
+     scenarios they cover
+   - **Manual tests:** step-by-step scenarios the developer should verify by
+     hand for any behavior that cannot be exercised by unit tests
 2. Show me the PR URL
 3. Add Copilot as a reviewer: `gh api /repos/OWNER/REPO/pulls/PR_NUMBER/requested_reviewers --method POST --field 'reviewers[]=copilot-pull-request-reviewer[bot]'`
 4. Print the test plan to the console, then ask: "Is this pull request ready for review?"
@@ -505,8 +534,10 @@ When the developer answers yes:
 When Claude completes the implementation it opens a draft PR and begins asking after every response whether it's ready for review. Use this time to read the diff, prompt Claude for refinements, or push your own changes to the branch. When you're satisfied, tell Claude the PR is ready — it will add the Jira comment and mark the PR as Ready for Review, making it visible to the rest of the team.
 
 Every draft PR includes a test plan section in the description covering:
-- **Automated tests:** the test files/suites added and the scenarios they cover
-- **Manual tests:** step-by-step scenarios to verify by hand before approving
+- **Automated tests:** confirmation the full unit test suite passed, plus the
+  test files/suites added and the scenarios they cover
+- **Manual tests:** step-by-step scenarios to verify by hand for any behavior
+  that cannot be exercised by unit tests
 
 The test plan is also printed to the console alongside the "Is this pull request ready for review?" prompt.
 
