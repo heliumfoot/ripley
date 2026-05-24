@@ -427,7 +427,15 @@ For each card in execution:
   - **Self-documenting names** — variables, functions, and types should explain themselves without comments
   - **Prefer immutability** — avoid mutable state where possible
   - **Testable** — prefer designs that can be exercised by unit tests; isolate side effects so logic can be verified in isolation
-- Log each non-obvious decision so it appears at review time
+- Keep a running **Decisions log** for this card. Whenever you make a
+  non-obvious or important judgment call — choosing one approach over
+  another, resolving an ambiguity raised by the developer, deferring scope,
+  working around a constraint — append a short entry to the log with:
+  the decision, the alternatives considered, and the reasoning. This log
+  is what gets included in the pull request description under a
+  **Decisions log** heading at PR creation time, and posted to the Jira
+  ticket at handoff (Stage 2). It needs to be durable across the session,
+  not just mentioned in chat.
 - If you hit uncertainty that a quick question would resolve better than your
   best guess, ask — you don't need to be fully blocked to interrupt. Prefer
   a short question over a decision the developer might want to make themselves
@@ -505,13 +513,19 @@ Completion happens in two stages.
 
 **Stage 1 — Implementation complete:**
 1. Create a draft pull request using the GitHub CLI. The PR description must
-   include a test plan section covering:
-   - **Automated tests:** confirmation that the full unit test suite passed
-     (from the background-agent verification in step 3 of the Pre-PR
-     Checklist), plus the test files/suites added by this card and the
-     scenarios they cover
-   - **Manual tests:** step-by-step scenarios the developer should verify by
-     hand for any behavior that cannot be exercised by unit tests
+   include:
+   - A **Decisions log** section containing every entry from the running
+     decisions log for this card (decision, alternatives considered,
+     reasoning). If no non-obvious decisions were made, state that
+     explicitly rather than omitting the section.
+   - A test plan section covering:
+     - **Automated tests:** confirmation that the full unit test suite
+       passed (from the background-agent verification in step 3 of the
+       Pre-PR Checklist), plus the test files/suites added by this card
+       and the scenarios they cover
+     - **Manual tests:** step-by-step scenarios the developer should
+       verify by hand for any behavior that cannot be exercised by unit
+       tests
 2. Show me the PR URL
 3. Add Copilot as a reviewer: `gh api /repos/OWNER/REPO/pulls/PR_NUMBER/requested_reviewers --method POST --field 'reviewers[]=copilot-pull-request-reviewer[bot]'`
 4. Print the test plan to the console, then ask: "Is this pull request ready for review?"
@@ -521,8 +535,14 @@ After every response, ask: "Is this pull request ready for review?"
 
 **Stage 2 — Ready for review:**
 When the developer answers yes:
-1. Add a comment to the Jira ticket summarizing what was implemented; note
-   explicitly that both the work and this comment were completed by Claude
+1. Add a comment to the Jira ticket containing:
+   - A summary of what was implemented
+   - The **Decisions log** for this card — every non-obvious or important
+     judgment call made during execution, with alternatives considered
+     and reasoning. This is the permanent record of *why* the work looks
+     the way it does; it must live on the ticket, not just in chat.
+   - An explicit note that both the work and this comment were completed
+     by Claude
 2. Mark the pull request as Ready for Review using the GitHub CLI
 3. Remove the worktree
 ```
@@ -533,7 +553,10 @@ When the developer answers yes:
 
 When Claude completes the implementation it opens a draft PR and begins asking after every response whether it's ready for review. Use this time to read the diff, prompt Claude for refinements, or push your own changes to the branch. When you're satisfied, tell Claude the PR is ready — it will add the Jira comment and mark the PR as Ready for Review, making it visible to the rest of the team.
 
-Every draft PR includes a test plan section in the description covering:
+Every draft PR includes the following in the description:
+- **Decisions log:** non-obvious or important judgment calls made during
+  execution, with alternatives considered and reasoning (or an explicit
+  note if none were made)
 - **Automated tests:** confirmation the full unit test suite passed, plus the
   test files/suites added and the scenarios they cover
 - **Manual tests:** step-by-step scenarios to verify by hand for any behavior
