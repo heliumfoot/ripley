@@ -132,6 +132,43 @@ Then …
 
 ---
 
+### Jira Preferences
+
+Different teams run different Jira workflows. Moving a completed card to the
+wrong status — or moving it at all when the team's process expects a human to
+do it — causes real problems (this is exactly what happened when cards were
+auto-moved to "Ready for QA" on a team whose process didn't allow it). To
+avoid guessing, Claude reads a per-repo preferences file before it ever
+transitions a card.
+
+The file lives at **`.claude/jira-prefs.json`** in the repo root and is
+**committed** — the completed-card workflow is a property of the team's Jira
+process, so the whole team shares one definition rather than each developer
+configuring it separately.
+
+**Schema:**
+
+```json
+{
+  "updateStatusOnComplete": true,
+  "completedStatus": "Acceptance Testing",
+  "onStatusUnavailable": "ask"
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `updateStatusOnComplete` | `true` — Claude moves a card's status when you confirm it's complete. `false` — Claude never changes card status; it only comments and leaves the transition to a human (use this when your QA process requires a person to move cards). |
+| `completedStatus` | The exact status name a completed card moves to, as it appears in Jira (e.g. `"Acceptance Testing"`). Only used when `updateStatusOnComplete` is `true`. |
+| `onStatusUnavailable` | What to do if `completedStatus` isn't a legal transition for a given card: `"ask"` — ask you what to do; `"skip"` — leave the card as-is and note it. Never silently falls back to a different status. |
+
+If the file is missing when `/workday` starts, Claude collects these answers
+once and writes the file (see the setup step in [Execution](#execution)). This
+means existing repos get migrated the next time `/workday` runs, not only
+brand-new ones.
+
+---
+
 ## Merged PR Review
 
 Before selecting new work, Claude checks for in-progress cards that may already be done.
@@ -139,14 +176,16 @@ Before selecting new work, Claude checks for in-progress cards that may already 
 Claude queries Jira for all in-progress cards assigned to you, then uses the GitHub CLI to find pull requests whose source branch contains each ticket's ID. For each card with a merged PR, Claude asks: "Is [TICKET-ID] — [title] complete?"
 
 **If yes:**
-- Set the card status to "Acceptance Testing"; if that status is not available, set it to "Ready for QA"
+- Update the card status according to the [Jira Preferences](#jira-preferences) for this repo:
+  - If `updateStatusOnComplete` is `false`: leave the status unchanged.
+  - If `true`: move the card to `completedStatus`. If that status isn't an available transition for this card, follow `onStatusUnavailable` — `ask` (ask what to do) or `skip` (leave it as-is and note it). Never silently substitute a different status.
 - Check the associated worktree:
   - If the worktree is clean and all commits have been pushed: delete the worktree silently
   - If the worktree is not clean or has unpushed commits: ask "This worktree has local changes or unpushed commits — should I commit, push, and delete it, or leave it in place?"
 
 **If no:** leave the card and worktree as-is and move on.
 
-Once all cards with merged PRs have been reviewed, ask: "Are there any other cards you've completed that I should close out?" If yes, ask for the IDs and follow the same completed card workflow for each: set the status to "Acceptance Testing" (or "Ready for QA" if unavailable), and handle the worktree as described above.
+Once all cards with merged PRs have been reviewed, ask: "Are there any other cards you've completed that I should close out?" If yes, ask for the IDs and follow the same completed card workflow for each: apply the same [Jira Preferences](#jira-preferences) status logic, and handle the worktree as described above.
 
 Once all completed cards have been handled, proceed to worktree resume.
 
@@ -282,8 +321,43 @@ Run the following setup checks:
 
    Once all setup steps are confirmed complete, proceed.
 
-If both checks pass (jira is installed and JIRA_CONFIG_FILE is set), skip
-setup entirely and proceed directly to the merged PR review.
+3. Check for a Jira preferences file at `.claude/jira-prefs.json` in the repo
+   root (the main working directory, not a worktree). This step runs whether
+   or not steps 1–2 triggered a setup walkthrough — existing repos without the
+   file get migrated here.
+
+   If the file exists, read it and use its values for all card-status
+   transitions later in this session. Do not re-prompt.
+
+   If the file does not exist, collect the preferences now:
+
+   a. Ask: "When a card's work is merged and you confirm it's complete, should
+      I automatically update its status in Jira? Some teams' QA processes
+      require a human to move cards — answer no if that's the case here.
+      (yes/no)"
+
+   b. If no: write `{ "updateStatusOnComplete": false }` and move on.
+
+   c. If yes: ask "What status should a completed card move to? Use the exact
+      name as it appears in your Jira workflow (e.g. 'Acceptance Testing')."
+      If you can identify one of my in-progress cards, verify the name is a
+      real transition for it (attempt `jira issue move` in a way that surfaces
+      the available transitions, or list them if the CLI supports it). If the
+      name doesn't match, show me the available transitions and ask me to pick
+      the right one. Do not proceed with a guessed status.
+
+   d. Then ask: "If that status ever isn't an available transition for a
+      particular card, should I ask you what to do, or skip the move and leave
+      the card as-is? (ask/skip)"
+
+   e. Write `.claude/jira-prefs.json` with `updateStatusOnComplete: true`, the
+      confirmed `completedStatus`, and the chosen `onStatusUnavailable`.
+      Confirm the file was written and tell me it's committed to the repo so
+      the team shares it.
+
+If steps 1–3 all pass (jira is installed, JIRA_CONFIG_FILE is set, and the
+preferences file exists), skip setup entirely and proceed directly to the
+merged PR review.
 
 ---
 
@@ -294,8 +368,12 @@ me, then use the GitHub CLI to find pull requests whose source branch contains
 each ticket ID. For each card with a merged PR, ask me if the card is complete.
 
 If yes:
-- Set the card status to "Acceptance Testing"; if unavailable, set it to
-  "Ready for QA"
+- Update the card status using the Jira preferences read during setup:
+  - If `updateStatusOnComplete` is `false`, leave the status unchanged.
+  - If `true`, move the card to `completedStatus`. If that status is not an
+    available transition for this card, follow `onStatusUnavailable`: `ask`
+    means ask me what to do; `skip` means leave the card as-is and tell me it
+    was skipped. Never silently substitute a different status.
 - Check the associated worktree. If clean and fully pushed, delete it. If not,
   ask: "This worktree has local changes or unpushed commits — should I commit,
   push, and delete it, or leave it in place?"
@@ -304,7 +382,8 @@ If no: leave the card and worktree as-is.
 
 Once all merged PRs have been reviewed, ask: "Are there any other cards
 you've completed that I should close out?" If yes, ask for the IDs and follow
-the same completed card workflow for each.
+the same completed card workflow for each, applying the same Jira-preferences
+status logic.
 
 Once all completed cards have been handled, print: "▶ Checking for in-progress worktrees"
 
