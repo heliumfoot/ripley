@@ -15,8 +15,12 @@ guidelines → `~/.claude/CLAUDE.md`, the `workday` / `end-of-day` / `test-ticke
 up anything it overwrites and never commits or pushes to ripley. Personal files
 in `~/.claude` are left untouched.
 
+The script needs `RIPLEY_DIR` set to your local ripley checkout (there is no
+default). Set it once in your shell profile, e.g. `export RIPLEY_DIR=~/path/to/ripley`.
+If it isn't set, the script exits with instructions rather than guessing.
+
 After it runs, report the summary line (how many files updated / new / unchanged)
 and, if any were updated, briefly note what changed and where the backup went.
 
-If `$ARGUMENTS` contains `--no-pull`, pass it through to sync from the current
-local ripley checkout without fetching.
+When invoked as `/sync-ripley --no-pull`, pass `--no-pull` through to the script
+to sync from the current local ripley checkout without fetching.

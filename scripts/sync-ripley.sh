@@ -17,12 +17,13 @@
 #   ~/.claude/sync-ripley.sh           # pull + sync
 #   ~/.claude/sync-ripley.sh --no-pull # sync from the current local ripley checkout
 #
-# Config (override via env):
-#   RIPLEY_DIR  — path to the ripley checkout (default: ~/Developer/heliumfoot/ripley)
+# Config (via env — required, no default):
+#   RIPLEY_DIR  — path to your local ripley checkout. Set it once in your shell
+#                 profile, e.g.  export RIPLEY_DIR=~/path/to/ripley
 
 set -euo pipefail
 
-RIPLEY_DIR="${RIPLEY_DIR:-$HOME/Developer/heliumfoot/ripley}"
+RIPLEY_DIR="${RIPLEY_DIR:-}"
 CLAUDE_DIR="$HOME/.claude"
 BACKUP_ROOT="$CLAUDE_DIR/backups/ripley-sync"
 PULL=1
@@ -41,16 +42,26 @@ MANIFEST=(
 )
 
 # --- Preflight -----------------------------------------------------------------
+if [ -z "$RIPLEY_DIR" ]; then
+	echo "ERROR: RIPLEY_DIR is not set." >&2
+	echo "       Point it at your local ripley checkout, e.g.:" >&2
+	echo "         RIPLEY_DIR=~/path/to/ripley ~/.claude/sync-ripley.sh" >&2
+	echo "       or export RIPLEY_DIR in your shell profile so it's always set." >&2
+	exit 1
+fi
+
 if [ ! -d "$RIPLEY_DIR/.git" ]; then
-	echo "ERROR: ripley checkout not found at: $RIPLEY_DIR" >&2
-	echo "       Clone it or set RIPLEY_DIR=/path/to/ripley" >&2
+	echo "ERROR: no ripley checkout found at RIPLEY_DIR: $RIPLEY_DIR" >&2
+	echo "       Clone ripley there, or set RIPLEY_DIR to the right path." >&2
 	exit 1
 fi
 
 # --- Pull latest (best-effort; never blocks the sync) --------------------------
 if [ "$PULL" -eq 1 ]; then
 	echo "→ Pulling latest ripley ($RIPLEY_DIR)…"
-	if ! git -C "$RIPLEY_DIR" pull --ff-only --quiet 2>/dev/null; then
+	# GIT_TERMINAL_PROMPT=0 makes auth fail fast instead of blocking on an
+	# interactive credential prompt, so the sync always continues.
+	if ! GIT_TERMINAL_PROMPT=0 git -C "$RIPLEY_DIR" pull --ff-only --quiet 2>/dev/null; then
 		echo "  ⚠ Could not fast-forward (offline, dirty tree, or diverged)."
 		echo "    Syncing from the current local checkout instead."
 	fi
