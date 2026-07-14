@@ -17,15 +17,24 @@
 #   ~/.claude/sync-ripley.sh           # pull + sync
 #   ~/.claude/sync-ripley.sh --no-pull # sync from the current local ripley checkout
 #
-# Config (via env — required, no default):
-#   RIPLEY_DIR  — path to your local ripley checkout. Set it once in your shell
-#                 profile, e.g.  export RIPLEY_DIR=~/path/to/ripley
+# Config:
+#   RIPLEY_DIR  — path to your local ripley checkout. Resolved from the
+#                 environment first, then from the saved config file
+#                 (~/.claude/sync-ripley.conf, written on first run via the
+#                 /sync-ripley command). No hardcoded default — every checkout
+#                 lives somewhere different.
 
 set -euo pipefail
 
-RIPLEY_DIR="${RIPLEY_DIR:-}"
 CLAUDE_DIR="$HOME/.claude"
+CONF_FILE="$CLAUDE_DIR/sync-ripley.conf"
 BACKUP_ROOT="$CLAUDE_DIR/backups/ripley-sync"
+
+RIPLEY_DIR="${RIPLEY_DIR:-}"
+if [ -z "$RIPLEY_DIR" ] && [ -f "$CONF_FILE" ]; then
+	RIPLEY_DIR="$(sed -n 's/^RIPLEY_DIR=//p' "$CONF_FILE" | head -n1)"
+fi
+
 PULL=1
 [ "${1:-}" = "--no-pull" ] && PULL=0
 
@@ -43,10 +52,12 @@ MANIFEST=(
 
 # --- Preflight -----------------------------------------------------------------
 if [ -z "$RIPLEY_DIR" ]; then
-	echo "ERROR: RIPLEY_DIR is not set." >&2
-	echo "       Point it at your local ripley checkout, e.g.:" >&2
+	echo "ERROR: RIPLEY_DIR is not set and no saved config was found." >&2
+	echo "       Run /sync-ripley in Claude Code — on first run it asks for your" >&2
+	echo "       local ripley checkout path and saves it to:" >&2
+	echo "         $CONF_FILE" >&2
+	echo "       Or set it yourself, e.g.:" >&2
 	echo "         RIPLEY_DIR=~/path/to/ripley ~/.claude/sync-ripley.sh" >&2
-	echo "       or export RIPLEY_DIR in your shell profile so it's always set." >&2
 	exit 1
 fi
 

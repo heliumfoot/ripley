@@ -15,9 +15,18 @@ guidelines → `~/.claude/CLAUDE.md`, the `workday` / `end-of-day` / `test-ticke
 up anything it overwrites and never commits or pushes to ripley. Personal files
 in `~/.claude` are left untouched.
 
-The script needs `RIPLEY_DIR` set to your local ripley checkout (there is no
-default). Set it once in your shell profile, e.g. `export RIPLEY_DIR=~/path/to/ripley`.
-If it isn't set, the script exits with instructions rather than guessing.
+The script needs to know where the local ripley checkout is, via `RIPLEY_DIR`.
+There is no hardcoded default. Before running the script, resolve it in this
+order:
+
+1. If `RIPLEY_DIR` is already set in the environment, or
+   `~/.claude/sync-ripley.conf` already exists, just run the script — it uses
+   them automatically.
+2. Otherwise this is a first run: ask the developer for the absolute path to
+   their local ripley checkout. Confirm the path contains a `.git` directory
+   (so it's a real clone), then save it by writing a single line
+   `RIPLEY_DIR=<absolute-path>` to `~/.claude/sync-ripley.conf`. Future runs
+   read the saved path automatically — you won't ask again.
 
 After it runs, report the summary line (how many files updated / new / unchanged)
 and, if any were updated, briefly note what changed and where the backup went.
