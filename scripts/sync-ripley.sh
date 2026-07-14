@@ -40,6 +40,15 @@ PULL=1
 
 # --- Managed manifest: "<source path in ripley>::<destination on disk>" --------
 # To add/remove a synced file, edit this list. Destinations use $HOME.
+#
+# Note on destinations: Claude config (guidelines + commands) goes under
+# $CLAUDE_DIR. pending-reviews is deliberately the odd one out — it installs to
+# ~/bin (a PATH location) because it's a standalone CLI, not Claude config: the
+# pending-reviews skill's allowed-tools invoke it as `~/bin/pending-reviews`, a
+# cron entry runs it as `$HOME/bin/pending-reviews --notify`, and the setup doc
+# runs it as the bare command `pending-reviews`. Do NOT "normalize" it into
+# $CLAUDE_DIR without also updating the skill, the cron entry, and the setup doc
+# — otherwise all three break.
 MANIFEST=(
 	"ai-assisted-development-guidelines.md::$CLAUDE_DIR/CLAUDE.md"
 	"workday.md::$CLAUDE_DIR/commands/workday.md"
@@ -47,6 +56,7 @@ MANIFEST=(
 	"commands/test-ticket.md::$CLAUDE_DIR/commands/test-ticket.md"
 	"commands/sync-ripley.md::$CLAUDE_DIR/commands/sync-ripley.md"
 	"scripts/sync-ripley.sh::$CLAUDE_DIR/sync-ripley.sh"
+	# standalone CLI → ~/bin (on PATH), NOT $CLAUDE_DIR — see note above
 	"scripts/pending-reviews.sh::$HOME/bin/pending-reviews"
 )
 
