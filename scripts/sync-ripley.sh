@@ -50,7 +50,8 @@ PULL=1
 # $CLAUDE_DIR without also updating the skill, the cron entry, and the setup doc
 # — otherwise all three break.
 MANIFEST=(
-	"ai-assisted-development-guidelines.md::$CLAUDE_DIR/CLAUDE.md"
+	"claude-global.md::$CLAUDE_DIR/CLAUDE.md"
+	"skills/ripley-guidelines/SKILL.md::$CLAUDE_DIR/skills/ripley-guidelines/SKILL.md"
 	"workday.md::$CLAUDE_DIR/commands/workday.md"
 	"commands/end-of-day.md::$CLAUDE_DIR/commands/end-of-day.md"
 	"commands/test-ticket.md::$CLAUDE_DIR/commands/test-ticket.md"

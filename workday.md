@@ -75,7 +75,7 @@ By default, Claude Code asks for permission every time it runs a `jira` CLI comm
 }
 ```
 
-This grants Claude permission to run any `jira` CLI command without prompting. See the [Claude Code Setup](ai-assisted-development-guidelines.md#claude-code-setup) section in the main guidelines for a full allowlist covering git, GitHub CLI, and platform build tools.
+This grants Claude permission to run any `jira` CLI command without prompting. See the **Claude Code Setup** section in the `ripley-guidelines` skill for a full allowlist covering git, GitHub CLI, and platform build tools.
 
 ### Jira CLI Command Reference
 
