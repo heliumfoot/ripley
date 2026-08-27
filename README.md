@@ -3,6 +3,7 @@
 A workflow for AI-assisted software development. Developer and machine collaborate on work plans which AI then executes.
 
 - **[workday.md](workday.md)** — The execution prompt and protocol for running the workday
+- **[pr-process.md](pr-process.md)** — Getting a pull request ready: six steps before opening, three for opening. `/pr-check` runs the first six
 
 ---
 
